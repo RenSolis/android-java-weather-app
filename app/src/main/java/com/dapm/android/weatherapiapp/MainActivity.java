@@ -10,18 +10,15 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
-
     Button btn_cityId, btn_getWeatherById, btn_getWeatherByName;
     EditText et_dataInput;
     ListView lv_weatherReport;
@@ -42,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
         btn_cityId.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
                 String url = "https://www.metaweather.com/api/location/search/?query=" + et_dataInput.getText().toString();
 
                 JsonArrayRequest jsonResult = new JsonArrayRequest(Request.Method.GET, url, null,
@@ -68,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                 );
 
-                queue.add(jsonResult);
+                MySingleton.getInstance(MainActivity.this).addToRequestQueue(jsonResult);
             }
         });
 
