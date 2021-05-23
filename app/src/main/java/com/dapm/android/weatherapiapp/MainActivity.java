@@ -9,15 +9,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public class MainActivity extends AppCompatActivity {
     Button btn_cityId, btn_getWeatherById, btn_getWeatherByName;
     EditText et_dataInput;
@@ -36,35 +27,22 @@ public class MainActivity extends AppCompatActivity {
 
         lv_weatherReport = findViewById(R.id.lv_weatherReports);
 
+        WeatherDataService weatherDataService = new WeatherDataService(MainActivity.this);
+
         btn_cityId.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String url = "https://www.metaweather.com/api/location/search/?query=" + et_dataInput.getText().toString();
+                weatherDataService.getCityId(et_dataInput.getText().toString(), new WeatherDataService.VolleyResponseListener() {
+                    @Override
+                    public void onResponse(String cityId) {
+                        Toast.makeText(MainActivity.this, "Returned an ID of " + cityId, Toast.LENGTH_SHORT).show();
+                    }
 
-                JsonArrayRequest jsonResult = new JsonArrayRequest(Request.Method.GET, url, null,
-                        new Response.Listener<JSONArray>() {
-                            @Override
-                            public void onResponse(JSONArray response) {
-                                String cityId = "";
-
-                                try {
-                                    JSONObject cityInfo = response.getJSONObject(0);
-                                    cityId = cityInfo.getString("woeid");
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-
-                                Toast.makeText(MainActivity.this, "City ID: " + cityId, Toast.LENGTH_SHORT).show();
-                            }
-                        }, new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                Toast.makeText(MainActivity.this, "Something wrong :(", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                );
-
-                MySingleton.getInstance(MainActivity.this).addToRequestQueue(jsonResult);
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
 
