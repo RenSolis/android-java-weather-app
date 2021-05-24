@@ -61,7 +61,13 @@ public class WeatherDataService {
         MySingleton.getInstance(context).addToRequestQueue(request);
     }
 
-    public void getCityForecastById(String cityId, VolleyResponseListener volleyResponseListener) {
+    public interface ForecastByIdResponse {
+        void onError(String message);
+
+        void onResponse(WeatherReportModel weatherReportModel);
+    }
+
+    public void getCityForecastById(String cityId, ForecastByIdResponse forecastByIdResponse) {
         List<WeatherReportModel> report = new ArrayList<>();
         String url = QUERY_FOR_CITY_WEATHER_BY_ID + cityId;
 
@@ -69,11 +75,36 @@ public class WeatherDataService {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
+                        try {
+                            JSONArray consolidatedWeatherList = response.getJSONArray("consolidated_weather");
+                            WeatherReportModel firstDay = new WeatherReportModel();
+
+                            JSONObject firstDayFromApi = (JSONObject) consolidatedWeatherList.get(0);
+                            firstDay.setId(firstDayFromApi.getInt("id"));
+                            firstDay.setWeather_state_name(firstDayFromApi.getString("weather_state_name"));
+                            firstDay.setWeather_state_abbr(firstDayFromApi.getString("weather_state_abbr"));
+                            firstDay.setWind_direction_compass(firstDayFromApi.getString("wind_direction_compass"));
+                            firstDay.setCreated(firstDayFromApi.getString("created"));
+                            firstDay.setApplicable_date(firstDayFromApi.getString("applicable_date"));
+                            firstDay.setMin_temp(firstDayFromApi.getLong("min_temp"));
+                            firstDay.setMax_temp(firstDayFromApi.getLong("max_temp"));
+                            firstDay.setThe_temp(firstDayFromApi.getLong("the_temp"));
+                            firstDay.setWind_speed(firstDayFromApi.getLong("wind_speed"));
+                            firstDay.setWind_direction(firstDayFromApi.getLong("wind_direction"));
+                            firstDay.setVisibility(firstDayFromApi.getLong("visibility"));
+                            firstDay.setAir_pressure(firstDayFromApi.getInt("air_pressure"));
+                            firstDay.setHumidity(firstDayFromApi.getInt("humidity"));
+                            firstDay.setPredictability(firstDayFromApi.getInt("predictability"));
+
+                            forecastByIdResponse.onResponse(firstDay);
+                        } catch (JSONException error) {
+                            error.printStackTrace();
+                        }
                     }
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        volleyResponseListener.onError("Something wrong");
+                        forecastByIdResponse.onError("Something wrong");
                     }
                 }
         );

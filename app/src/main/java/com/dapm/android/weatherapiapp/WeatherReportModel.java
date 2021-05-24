@@ -35,6 +35,8 @@ public class WeatherReportModel {
         this.visibility = visibility;
     }
 
+    public WeatherReportModel() {}
+
     @Override
     public String toString() {
         return "WeatherReportModel{" +
