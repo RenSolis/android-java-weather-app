@@ -62,13 +62,13 @@ public class WeatherDataService {
     }
 
     public interface ForecastByIdResponse {
-        void onError(String message);
+        void onResponse(List<WeatherReportModel> weatherReportModels);
 
-        void onResponse(WeatherReportModel weatherReportModel);
+        void onError(String message);
     }
 
     public void getCityForecastById(String cityId, ForecastByIdResponse forecastByIdResponse) {
-        List<WeatherReportModel> report = new ArrayList<>();
+        List<WeatherReportModel> weatherReportModels = new ArrayList<>();
         String url = QUERY_FOR_CITY_WEATHER_BY_ID + cityId;
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
@@ -77,26 +77,31 @@ public class WeatherDataService {
                     public void onResponse(JSONObject response) {
                         try {
                             JSONArray consolidatedWeatherList = response.getJSONArray("consolidated_weather");
-                            WeatherReportModel firstDay = new WeatherReportModel();
 
-                            JSONObject firstDayFromApi = (JSONObject) consolidatedWeatherList.get(0);
-                            firstDay.setId(firstDayFromApi.getInt("id"));
-                            firstDay.setWeather_state_name(firstDayFromApi.getString("weather_state_name"));
-                            firstDay.setWeather_state_abbr(firstDayFromApi.getString("weather_state_abbr"));
-                            firstDay.setWind_direction_compass(firstDayFromApi.getString("wind_direction_compass"));
-                            firstDay.setCreated(firstDayFromApi.getString("created"));
-                            firstDay.setApplicable_date(firstDayFromApi.getString("applicable_date"));
-                            firstDay.setMin_temp(firstDayFromApi.getLong("min_temp"));
-                            firstDay.setMax_temp(firstDayFromApi.getLong("max_temp"));
-                            firstDay.setThe_temp(firstDayFromApi.getLong("the_temp"));
-                            firstDay.setWind_speed(firstDayFromApi.getLong("wind_speed"));
-                            firstDay.setWind_direction(firstDayFromApi.getLong("wind_direction"));
-                            firstDay.setVisibility(firstDayFromApi.getLong("visibility"));
-                            firstDay.setAir_pressure(firstDayFromApi.getInt("air_pressure"));
-                            firstDay.setHumidity(firstDayFromApi.getInt("humidity"));
-                            firstDay.setPredictability(firstDayFromApi.getInt("predictability"));
+                            for (int i = 0; i < consolidatedWeatherList.length(); i++) {
+                                WeatherReportModel oneDayWeather = new WeatherReportModel();
+                                JSONObject consolidateWeather = (JSONObject) consolidatedWeatherList.get(i);
 
-                            forecastByIdResponse.onResponse(firstDay);
+                                oneDayWeather.setId(consolidateWeather.getInt("id"));
+                                oneDayWeather.setWeather_state_name(consolidateWeather.getString("weather_state_name"));
+                                oneDayWeather.setWeather_state_abbr(consolidateWeather.getString("weather_state_abbr"));
+                                oneDayWeather.setWind_direction_compass(consolidateWeather.getString("wind_direction_compass"));
+                                oneDayWeather.setCreated(consolidateWeather.getString("created"));
+                                oneDayWeather.setApplicable_date(consolidateWeather.getString("applicable_date"));
+                                oneDayWeather.setMin_temp(consolidateWeather.getLong("min_temp"));
+                                oneDayWeather.setMax_temp(consolidateWeather.getLong("max_temp"));
+                                oneDayWeather.setThe_temp(consolidateWeather.getLong("the_temp"));
+                                oneDayWeather.setWind_speed(consolidateWeather.getLong("wind_speed"));
+                                oneDayWeather.setWind_direction(consolidateWeather.getLong("wind_direction"));
+                                oneDayWeather.setVisibility(consolidateWeather.getLong("visibility"));
+                                oneDayWeather.setAir_pressure(consolidateWeather.getInt("air_pressure"));
+                                oneDayWeather.setHumidity(consolidateWeather.getInt("humidity"));
+                                oneDayWeather.setPredictability(consolidateWeather.getInt("predictability"));
+
+                                weatherReportModels.add(oneDayWeather);
+                            }
+
+                            forecastByIdResponse.onResponse(weatherReportModels);
                         } catch (JSONException error) {
                             error.printStackTrace();
                         }
@@ -112,6 +117,33 @@ public class WeatherDataService {
         MySingleton.getInstance(context).addToRequestQueue(request);
     }
 
-    // public List<WeatherReportModel> getCityForecastByName(String cityName) {
-    // }
+    public interface GetCityForecastByNameCallback {
+        void onError(String message);
+
+        void onResponse(List<WeatherReportModel> weatherReportModels);
+    }
+
+    public void getCityForecastByName(String cityName, GetCityForecastByNameCallback getCityForecastByNameCallback) {
+        getCityId(cityName, new VolleyResponseListener() {
+            @Override
+            public void onResponse(String cityId) {
+                getCityForecastById(cityId, new ForecastByIdResponse() {
+                    @Override
+                    public void onResponse(List<WeatherReportModel> weatherReportModels) {
+                        getCityForecastByNameCallback.onResponse(weatherReportModels);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        getCityForecastByNameCallback.onError("Something wrong");
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                getCityForecastByNameCallback.onError("Something wrong");
+            }
+        });
+    }
 }
